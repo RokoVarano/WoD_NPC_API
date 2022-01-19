@@ -69,8 +69,7 @@ async def get_user(user: User_Pydantic = Depends(get_user_current)):
     return user
 
 @app.post('/api/characters', response_model=Character_Pydantic)
-async def create_character(character: Character_Pydantic, token: str):
-    owner=get_user_current(token)
+async def create_character(character: Character_Pydantic, owner: User_Pydantic = Depends(get_user_current)):
 
     character_obj = Character(
         user_id=owner.id,
@@ -144,9 +143,7 @@ async def create_character(character: Character_Pydantic, token: str):
     return await Character_Pydantic.from_tortoise_orm(character_obj)
 
 @app.get('/api/characters', response_model=List[Character_Pydantic], status_code=status.HTTP_200_OK)
-async def get_characters(token: str):
-    owner = get_user_current(token)
-
+async def get_characters(owner: User_Pydantic = Depends(get_user_current)):
     my_chars = await Character.filter(user_id = owner.id).all()
     return await [Character_Pydantic.from_tortoise_orm(character) for character in my_chars]
 
