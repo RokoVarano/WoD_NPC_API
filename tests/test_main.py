@@ -9,7 +9,6 @@ from tortoise.contrib.test import finalizer, initializer
 from tortoise.contrib.fastapi import register_tortoise
 import jwt
 
-
 register_tortoise(
     app_test,
     db_url="postgres://postgres:postgres@localhost:5432/wod_npc_test",
@@ -18,7 +17,7 @@ register_tortoise(
     add_exception_handlers=True
 )
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def client() -> Generator:
     initializer(modules=["main"], db_url="postgres://postgres:postgres@localhost:5432/wod_npc_test")
     with TestClient(app_test) as c:
