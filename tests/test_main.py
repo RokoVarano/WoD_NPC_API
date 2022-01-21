@@ -4,7 +4,7 @@ from typing import Generator
 import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
-from main import app_test, JWT_SECRET
+from main import app_test, JWT_SECRET, authenticate_user
 from tortoise.contrib.test import finalizer, initializer
 from tortoise.contrib.fastapi import register_tortoise
 import jwt
@@ -45,5 +45,13 @@ def test_login_wrong(client: TestClient):
     client.post("/api/users", json={"username": "Roko", "password_hash" : "lagartito5"})
     response = client.post("/api/login", data={"username": "Roko", "password": "wrong_pass"})
     assert response.json()["detail"] == "Invalid username or password"
+
+def test_get_myself(client: TestClient):
+    client.post("/api/users", json={"username": "Roko", "password_hash" : "lagartito5"})
+    jwt_response = client.post("/api/login", data={"username": "Roko", "password": "lagartito5"}).json()
+    assert client.get("/api/users/me", headers={"Authorization" : "Bearer " + jwt_response["access_token"]}).json()["username"] == 'Roko'
+
+def test_get_myself_unauthorized(client: TestClient):
+    assert client.get("/api/users/me").json()["detail"] == 'Not authenticated'
 
     # Documentation: ["https://tortoise-orm.readthedocs.io/en/latest/examples/fastapi.html#tests-py", ]
