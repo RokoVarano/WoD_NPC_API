@@ -82,6 +82,5 @@ class Character(Model):
     humanity=fields.IntField(default=0)
     stains=fields.IntField(default=0)
 
-Character_Pydantic = pydantic_model_creator(
-    Character
-    )
+Character_Pydantic = pydantic_model_creator(Character, name='Character')
+CharacterIn_Pydantic = pydantic_model_creator(Character, name='Character', exclude_readonly=True)

@@ -1,3 +1,4 @@
+from os import environ
 from pydoc import resolve
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm, oauth2
@@ -9,8 +10,10 @@ from passlib.hash import bcrypt
 from characters import Character, Character_Pydantic
 from typing import List
 import jwt
+import copy
 
 app = FastAPI()
+app_test = copy.copy(app)
 
 JWT_SECRET = 'myjwtsecret'
 
@@ -35,7 +38,7 @@ async def authenticate_user(username:str, password:str):
         return False
     return user
 
-@app.post('/token')
+@app.post('/api/login')
 async def generate_token(form_data:OAuth2PasswordRequestForm = Depends()):
     user = await authenticate_user(form_data.username, form_data.password)
 
@@ -58,13 +61,13 @@ async def get_user_current(token: str = Depends(oauth2_scheme)):
     return await User_Pydantic.from_tortoise_orm(user)
 
 
-@app.post('/users', response_model=User_Pydantic)
+@app.post('/api/users', response_model=User_Pydantic, status_code=status.HTTP_201_CREATED)
 async def create_user(user: UserIn_Pydantic):
     user_obj= User(username=user.username, password_hash=bcrypt.hash(user.password_hash))
     await user_obj.save()
     return await User_Pydantic.from_tortoise_orm(user_obj)
 
-@app.get('/users/me', response_model=User_Pydantic)
+@app.get('/api/users/me', response_model=User_Pydantic)
 async def get_user(user: User_Pydantic = Depends(get_user_current)):
     return user
 
@@ -72,7 +75,7 @@ async def get_user(user: User_Pydantic = Depends(get_user_current)):
 async def create_character(character: Character_Pydantic, owner: User_Pydantic = Depends(get_user_current)):
 
     character_obj = Character(
-        user_id=owner.id,
+        user=owner,
         name=character.name,
         sex=character.sex,
         gender=character.gender,
@@ -150,6 +153,7 @@ async def get_characters(owner: User_Pydantic = Depends(get_user_current)):
 register_tortoise(
     app,
     db_url="postgres://postgres:postgres@localhost:5432/wod_npc",
+    # db_url=environ.get("DATABASE_URL")
     modules={'models': ['main']},
     generate_schemas= True,
     add_exception_handlers=True
