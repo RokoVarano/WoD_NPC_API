@@ -90,4 +90,15 @@ async def test_get_characters(client:TestClient):
     assert len(client.get("/api/characters", headers={"Authorization" : "Bearer " + jwt_response_r["access_token"]}).json())== 3
     assert len(client.get("/api/characters", headers={"Authorization" : "Bearer " + jwt_response_s["access_token"]}).json()) == 2
 
+@pytest.mark.asyncio
+async def test_get_characters_not_logged(client:TestClient):
+    client.post("/api/users", json={"username": "Roko", "password_hash" : "lagartito5"})
+    jwt_response_r = client.post("/api/login", data={"username": "Roko", "password": "lagartito5"}).json()
+
+    c1 = await CharacterIn_Pydantic.from_tortoise_orm(Character(id=1))
+
+    client.post("/api/characters", json=c1.__dict__, headers={"Authorization" : "Bearer " + jwt_response_r["access_token"]})
+
+    assert client.get("/api/characters").json()["detail"] == "Not authenticated"
+
     # Documentation: ["https://tortoise-orm.readthedocs.io/en/latest/examples/fastapi.html#tests-py", ]
