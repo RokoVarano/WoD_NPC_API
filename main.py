@@ -7,7 +7,7 @@ from tortoise import fields
 from tortoise.contrib.fastapi import register_tortoise
 from tortoise.contrib.pydantic import pydantic_model_creator
 from passlib.hash import bcrypt
-from characters import Character, Character_Pydantic
+from characters import Character, Character_Pydantic, CharacterIn_Pydantic
 from typing import List
 import jwt
 import copy
@@ -28,7 +28,7 @@ class User(Model):
 User_Pydantic = pydantic_model_creator(User, name='User')
 UserIn_Pydantic = pydantic_model_creator(User, name='UserIn', exclude_readonly=True)
 
-oauth2_scheme = oauth2.OAuth2PasswordBearer(tokenUrl='token')
+oauth2_scheme = oauth2.OAuth2PasswordBearer(tokenUrl='api/login/')
 
 async def authenticate_user(username:str, password:str):
     user = await User.get(username=username)
@@ -71,11 +71,11 @@ async def create_user(user: UserIn_Pydantic):
 async def get_user(user: User_Pydantic = Depends(get_user_current)):
     return user
 
-@app.post('/api/characters', response_model=Character_Pydantic)
-async def create_character(character: Character_Pydantic, owner: User_Pydantic = Depends(get_user_current)):
+@app.post('/api/characters', response_model=Character_Pydantic, status_code=status.HTTP_201_CREATED)
+async def create_character(character: CharacterIn_Pydantic, owner: User_Pydantic = Depends(get_user_current)):
 
     character_obj = Character(
-        user=owner,
+        user_id=owner.id,
         name=character.name,
         sex=character.sex,
         gender=character.gender,
@@ -153,7 +153,6 @@ async def get_characters(owner: User_Pydantic = Depends(get_user_current)):
 register_tortoise(
     app,
     db_url="postgres://postgres:postgres@localhost:5432/wod_npc",
-    # db_url=environ.get("DATABASE_URL")
     modules={'models': ['main']},
     generate_schemas= True,
     add_exception_handlers=True

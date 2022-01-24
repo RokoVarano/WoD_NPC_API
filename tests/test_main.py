@@ -4,7 +4,10 @@ from typing import Generator
 import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
-from main import app_test, JWT_SECRET, authenticate_user
+from httpx import AsyncClient
+import pytest_asyncio
+from main import app_test, JWT_SECRET
+from characters import Character, CharacterIn_Pydantic
 from tortoise.contrib.test import finalizer, initializer
 from tortoise.contrib.fastapi import register_tortoise
 import jwt
@@ -53,5 +56,13 @@ def test_get_myself(client: TestClient):
 
 def test_get_myself_unauthorized(client: TestClient):
     assert client.get("/api/users/me").json()["detail"] == 'Not authenticated'
+
+@pytest.mark.asyncio
+async def test_create_character(client:TestClient):
+    client.post("/api/users", json={"username": "Roko", "password_hash" : "lagartito5"})
+    jwt_response = client.post("/api/login", data={"username": "Roko", "password": "lagartito5"}).json()
+    c = await CharacterIn_Pydantic.from_tortoise_orm(Character(id=1))
+
+    assert len(client.post("/api/characters", json=c.__dict__, headers={"Authorization" : "Bearer " + jwt_response["access_token"]}).json().keys()) == 67
 
     # Documentation: ["https://tortoise-orm.readthedocs.io/en/latest/examples/fastapi.html#tests-py", ]

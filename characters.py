@@ -44,7 +44,7 @@ class Character(Model):
     insight=fields.IntField(default=0)
     intimidation=fields.IntField(default=0)
     leadership=fields.IntField(default=0)
-    performace=fields.IntField(default=0)
+    performance=fields.IntField(default=0)
     persuasion=fields.IntField(default=0)
     streetwise=fields.IntField(default=0)
     subterfuge=fields.IntField(default=0)
