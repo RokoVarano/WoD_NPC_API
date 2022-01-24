@@ -5,7 +5,7 @@ from typing import Generator
 import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
-from main import User, app_test, JWT_SECRET
+from main import app_test, JWT_SECRET
 from characters import Character, CharacterIn_Pydantic
 from tortoise.contrib.test import finalizer, initializer
 from tortoise.contrib.fastapi import register_tortoise
@@ -128,17 +128,17 @@ async def test_character_serialization(client:TestClient):
     assert client.get("/api/characters", headers={"Authorization" : "Bearer " + jwt_response_s["access_token"]}).json()[0]["id"] == 2
     
 
-# @pytest.mark.asyncio
-# async def test_delete_character(client:TestClient):
-#     client.post("/api/users", json={"username": "Roko", "password_hash" : "lagartito5"})
-#     jwt_response_r = client.post("/api/login", data={"username": "Roko", "password": "lagartito5"}).json()
+@pytest.mark.asyncio
+async def test_delete_character(client:TestClient):
+    client.post("/api/users", json={"username": "Roko", "password_hash" : "lagartito5"})
+    jwt_response_r = client.post("/api/login", data={"username": "Roko", "password": "lagartito5"}).json()
 
-#     c1 = await CharacterIn_Pydantic.from_tortoise_orm(Character(id=1))
+    c1 = await CharacterIn_Pydantic.from_tortoise_orm(Character(id=1))
 
-#     client.post("/api/characters", json=c1.__dict__, headers={"Authorization" : "Bearer " + jwt_response_r["access_token"]})
-#     client.delete("/api/characters", headers={"Authorization" : "Bearer " + jwt_response_r["access_token"]})
+    client.post("/api/characters", json=c1.__dict__, headers={"Authorization" : "Bearer " + jwt_response_r["access_token"]})
+    client.delete("/api/characters", params={"id": 1}, headers={"Authorization" : "Bearer " + jwt_response_r["access_token"]})
 
-#     assert len(client.get("/api/characters").json()) == 0
+    assert len(client.get("/api/characters", headers={"Authorization" : "Bearer " + jwt_response_r["access_token"]}).json()) == 0
 
 # @pytest.mark.asyncio
 # async def test_delete_character_wrong_user(client:TestClient):

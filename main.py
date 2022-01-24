@@ -148,6 +148,14 @@ async def get_characters(owner: User_Pydantic = Depends(get_user_current)):
     my_chars = await Character.filter(user_id = owner.id).all()
     return [await Character_Pydantic.from_tortoise_orm(character) for character in my_chars]
 
+@app.delete('/api/characters', response_model=str, status_code=status.HTTP_202_ACCEPTED)
+async def delete_character(id: int, owner = Depends(get_user_current)):
+    if not owner:
+        return "Not logged in"
+
+    c = await Character.get(id=id)
+    await c.delete()
+
 register_tortoise(
     app,
     db_url="postgres://postgres:postgres@localhost:5432/wod_npc",
