@@ -1,10 +1,11 @@
 # mypy: no-disallow-untyped-decorators
 # pylint: disable=E0611,E0401
+import asyncio
 from typing import Generator
 import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
-from main import app_test, JWT_SECRET
+from main import User, app_test, JWT_SECRET
 from characters import Character, CharacterIn_Pydantic
 from tortoise.contrib.test import finalizer, initializer
 from tortoise.contrib.fastapi import register_tortoise
@@ -98,5 +99,64 @@ async def test_get_characters_not_logged(client:TestClient):
     client.post("/api/characters", json=c1.__dict__, headers={"Authorization" : "Bearer " + jwt_response_r["access_token"]})
 
     assert client.get("/api/characters").json()["detail"] == "Not authenticated"
+
+@pytest.mark.asyncio
+async def test_user_serialization(client:TestClient):
+    roko = client.post("/api/users", json={"username": "Roko", "password_hash" : "lagartito5"})
+    sicro = client.post("/api/users", json={"username": "Sicro", "password_hash" : "lagartito5"})
+
+    assert roko.json()["id"] == 1
+    assert sicro.json()["id"] == 2
+
+@pytest.mark.asyncio
+async def test_character_serialization(client:TestClient):
+    client.post("/api/users", json={"username": "Roko", "password_hash" : "lagartito5"})
+    jwt_response_r = client.post("/api/login", data={"username": "Roko", "password": "lagartito5"}).json()
+
+    c1 = await CharacterIn_Pydantic.from_tortoise_orm(Character(id=1))
+
+    b1 = await CharacterIn_Pydantic.from_tortoise_orm(Character(id=1, user_id=2))
+
+    client.post("/api/characters", json=c1.__dict__, headers={"Authorization" : "Bearer " + jwt_response_r["access_token"]})
+
+    client.post("/api/users", json={"username": "Sicro", "password_hash" : "playa"})
+    jwt_response_s = client.post("/api/login", data={"username": "Sicro", "password": "playa"}).json()
+
+    client.post("/api/characters", json=b1.__dict__, headers={"Authorization" : "Bearer " + jwt_response_s["access_token"]})
+
+    assert client.get("/api/characters", headers={"Authorization" : "Bearer " + jwt_response_r["access_token"]}).json()[0]["id"] == 1
+    assert client.get("/api/characters", headers={"Authorization" : "Bearer " + jwt_response_s["access_token"]}).json()[0]["id"] == 2
+    
+
+# @pytest.mark.asyncio
+# async def test_delete_character(client:TestClient):
+#     client.post("/api/users", json={"username": "Roko", "password_hash" : "lagartito5"})
+#     jwt_response_r = client.post("/api/login", data={"username": "Roko", "password": "lagartito5"}).json()
+
+#     c1 = await CharacterIn_Pydantic.from_tortoise_orm(Character(id=1))
+
+#     client.post("/api/characters", json=c1.__dict__, headers={"Authorization" : "Bearer " + jwt_response_r["access_token"]})
+#     client.delete("/api/characters", headers={"Authorization" : "Bearer " + jwt_response_r["access_token"]})
+
+#     assert len(client.get("/api/characters").json()) == 0
+
+# @pytest.mark.asyncio
+# async def test_delete_character_wrong_user(client:TestClient):
+#     client.post("/api/users", json={"username": "Roko", "password_hash" : "lagartito5"})
+#     jwt_response_r = client.post("/api/login", data={"username": "Roko", "password": "lagartito5"}).json()
+
+#     c1 = await CharacterIn_Pydantic.from_tortoise_orm(Character(id=1))
+#     client.post("/api/characters", json=c1.__dict__, headers={"Authorization" : "Bearer " + jwt_response_r["access_token"]})
+
+#     client.post("/api/users", json={"username": "Sicro", "password_hash" : "lagartito5"})
+#     jwt_response_s = client.post("/api/login", data={"username": "Sicro", "password": "lagartito5"}).json()
+
+#     b1 = await CharacterIn_Pydantic.from_tortoise_orm(Character(id=1))
+#     client.post("/api/characters", json=b1.__dict__, headers={"Authorization" : "Bearer " + jwt_response_s["access_token"]})
+
+#     client.delete("/api/characters", data={"id":2} ,headers={"Authorization" : "Bearer " + jwt_response_s["access_token"]})
+
+#     assert len(client.get("/api/characters", headers={"Authorization" : "Bearer " + jwt_response_s["access_token"]}).json()) == 0
+#     assert len(client.get("/api/characters", headers={"Authorization" : "Bearer " + jwt_response_r["access_token"]}).json()) == 1
 
     # Documentation: ["https://tortoise-orm.readthedocs.io/en/latest/examples/fastapi.html#tests-py", ]
