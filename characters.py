@@ -1,5 +1,3 @@
-from dataclasses import field
-from email.policy import default
 from tortoise.models import Model
 from tortoise import fields
 from tortoise.contrib.pydantic import pydantic_model_creator

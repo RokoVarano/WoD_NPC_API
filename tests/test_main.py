@@ -4,8 +4,6 @@ from typing import Generator
 import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
-from httpx import AsyncClient
-import pytest_asyncio
 from main import app_test, JWT_SECRET
 from characters import Character, CharacterIn_Pydantic
 from tortoise.contrib.test import finalizer, initializer

@@ -1,5 +1,3 @@
-from os import environ
-from pydoc import resolve
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm, oauth2
 from tortoise.models import Model
