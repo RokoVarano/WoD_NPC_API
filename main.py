@@ -148,7 +148,7 @@ async def create_character(character: CharacterIn_Pydantic, owner: User_Pydantic
 @app.get('/api/characters', response_model=List[Character_Pydantic], status_code=status.HTTP_200_OK)
 async def get_characters(owner: User_Pydantic = Depends(get_user_current)):
     my_chars = await Character.filter(user_id = owner.id).all()
-    return await [Character_Pydantic.from_tortoise_orm(character) for character in my_chars]
+    return [await Character_Pydantic.from_tortoise_orm(character) for character in my_chars]
 
 register_tortoise(
     app,

@@ -65,4 +65,29 @@ async def test_create_character(client:TestClient):
 
     assert len(client.post("/api/characters", json=c.__dict__, headers={"Authorization" : "Bearer " + jwt_response["access_token"]}).json().keys()) == 67
 
+@pytest.mark.asyncio
+async def test_get_characters(client:TestClient):
+    client.post("/api/users", json={"username": "Roko", "password_hash" : "lagartito5"})
+    jwt_response_r = client.post("/api/login", data={"username": "Roko", "password": "lagartito5"}).json()
+
+    c1 = await CharacterIn_Pydantic.from_tortoise_orm(Character(id=1))
+    c2 = await CharacterIn_Pydantic.from_tortoise_orm(Character(id=1))
+    c3 = await CharacterIn_Pydantic.from_tortoise_orm(Character(id=1))
+
+    b1 = await CharacterIn_Pydantic.from_tortoise_orm(Character(id=1, user_id=2))
+    b2 = await CharacterIn_Pydantic.from_tortoise_orm(Character(id=1, user_id=2))
+
+    client.post("/api/characters", json=c1.__dict__, headers={"Authorization" : "Bearer " + jwt_response_r["access_token"]})
+    client.post("/api/characters", json=c2.__dict__, headers={"Authorization" : "Bearer " + jwt_response_r["access_token"]})
+    client.post("/api/characters", json=c3.__dict__, headers={"Authorization" : "Bearer " + jwt_response_r["access_token"]})
+
+    client.post("/api/users", json={"username": "Sicro", "password_hash" : "playa"})
+    jwt_response_s = client.post("/api/login", data={"username": "Sicro", "password": "playa"}).json()
+
+    client.post("/api/characters", json=b1.__dict__, headers={"Authorization" : "Bearer " + jwt_response_s["access_token"]})
+    client.post("/api/characters", json=b2.__dict__, headers={"Authorization" : "Bearer " + jwt_response_s["access_token"]})
+
+    assert len(client.get("/api/characters", headers={"Authorization" : "Bearer " + jwt_response_r["access_token"]}).json())== 3
+    assert len(client.get("/api/characters", headers={"Authorization" : "Bearer " + jwt_response_s["access_token"]}).json()) == 2
+
     # Documentation: ["https://tortoise-orm.readthedocs.io/en/latest/examples/fastapi.html#tests-py", ]
