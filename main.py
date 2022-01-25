@@ -156,6 +156,19 @@ async def delete_character(id: int, owner = Depends(get_user_current)):
     c = await Character.get(id=id)
     await c.delete()
 
+@app.put('/api/characters', response_model=Character_Pydantic, status_code=status.HTTP_200_OK)
+async def update_character(id: int, to_update: dict, owner = Depends(get_user_current)):
+    if not owner:
+        return "Not logged in"
+
+    c = await Character.get(id=id)
+
+    await c.update_from_dict(to_update)
+
+    await c.save()
+
+    return await Character_Pydantic.from_tortoise_orm(c)
+
 register_tortoise(
     app,
     db_url="postgres://postgres:postgres@localhost:5432/wod_npc",
