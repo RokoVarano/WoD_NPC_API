@@ -47,7 +47,7 @@ async def generate_token(form_data:OAuth2PasswordRequestForm = Depends()):
 
     token = jwt.encode(user_obj.dict(), JWT_SECRET)
 
-    return {'access_token': token, 'token_type' : 'bearer'}
+    return {"id": user_obj.id, "username": user_obj.username, 'access_token': token, 'token_type' : 'bearer'}
 
 async def get_user_current(token: str = Depends(oauth2_scheme)):
     try:
@@ -65,9 +65,9 @@ async def create_user(user: UserIn_Pydantic):
     await user_obj.save()
     return await User_Pydantic.from_tortoise_orm(user_obj)
 
-@app.get('/api/users/me', response_model=User_Pydantic)
-async def get_user(user: User_Pydantic = Depends(get_user_current)):
-    return user
+# @app.get('/api/users/me', response_model=User_Pydantic)
+# async def get_user(user: User_Pydantic = Depends(get_user_current)):
+#     return user
 
 @app.post('/api/characters', response_model=Character_Pydantic, status_code=status.HTTP_201_CREATED)
 async def create_character(character: CharacterIn_Pydantic, owner: User_Pydantic = Depends(get_user_current)):

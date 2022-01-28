@@ -41,20 +41,23 @@ def test_create_user_duplicate(client: TestClient):  # nosec
 def test_login(client: TestClient):
     client.post("/api/users", json={"username": "Roko", "password_hash" : "lagartito5"})
     response = client.post("/api/login", data={"username": "Roko", "password": "lagartito5"})
-    assert jwt.decode(response.json()["access_token"], JWT_SECRET, algorithms=['HS256']).get("username") == "Roko"
+    assert response.json()["id"] == 1
+    assert response.json()["username"] == "Roko"
+    assert jwt.decode(response.json()["access_token"], JWT_SECRET, algorithms=['HS256'])["id"] == 1
+    assert response.json()["token_type"] == "bearer"
 
 def test_login_wrong(client: TestClient):
     client.post("/api/users", json={"username": "Roko", "password_hash" : "lagartito5"})
     response = client.post("/api/login", data={"username": "Roko", "password": "wrong_pass"})
     assert response.json()["detail"] == "Invalid username or password"
 
-def test_get_myself(client: TestClient):
-    client.post("/api/users", json={"username": "Roko", "password_hash" : "lagartito5"})
-    jwt_response = client.post("/api/login", data={"username": "Roko", "password": "lagartito5"}).json()
-    assert client.get("/api/users/me", headers={"Authorization" : "Bearer " + jwt_response["access_token"]}).json()["username"] == 'Roko'
+# def test_get_myself(client: TestClient):
+#     client.post("/api/users", json={"username": "Roko", "password_hash" : "lagartito5"})
+#     jwt_response = client.post("/api/login", data={"username": "Roko", "password": "lagartito5"}).json()
+#     assert client.get("/api/users/me", headers={"Authorization" : "Bearer " + jwt_response["access_token"]}).json()["username"] == 'Roko'
 
-def test_get_myself_unauthorized(client: TestClient):
-    assert client.get("/api/users/me").json()["detail"] == 'Not authenticated'
+# def test_get_myself_unauthorized(client: TestClient):
+#     assert client.get("/api/users/me").json()["detail"] == 'Not authenticated'
 
 @pytest.mark.asyncio
 async def test_create_character(client:TestClient):
