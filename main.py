@@ -9,6 +9,7 @@ from characters import Character, Character_Pydantic, CharacterIn_Pydantic
 from typing import List
 import jwt
 import copy
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 app_test = copy.copy(app)
@@ -168,6 +169,18 @@ async def update_character(id: int, to_update: dict, owner = Depends(get_user_cu
     await c.save()
 
     return await Character_Pydantic.from_tortoise_orm(c)
+
+origins = [
+    "http://localhost:3000"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 register_tortoise(
     app,
